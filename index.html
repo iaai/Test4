@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HTML Apps">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23007aff'/%3E%3Ctext x='50%25' y='50%25' font-size='50' fill='white' text-anchor='middle' dominant-baseline='central'%3EH%3C/text%3E%3C/svg%3E">
+    <title>Web App Manager</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSFRNTCBBcHAgTWFuYWdlciIsInNob3J0X25hbWUiOiJIVE1MIEFwcHMiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2YyZjJmNyIsInRoZW1lX2NvbG9yIjoiIzAwN2FmZiIsIm9yaWVudGF0aW9uIjoicG9ydHJhaXQiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3JlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIGZpbGw9JyUyMzAwN2FmZicvJTNFJTNDdGV4dCB4PSc1MCUyNScgeT0nNTAlMjUnIGZvbnQtc2l6ZT0nNTAnIGZpbGw9J3doaXRlJyUzRUglM0MvdGV4dCUzRSUzQy9zdmclM0UiLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/eclipse.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        :root {
+            --bg: #f2f2f7;
+            --card-bg: #ffffff;
+            --primary: #007aff;
+            --danger: #ff3b30;
+            --text: #000000;
+            --border: #c6c6c8;
+            /* Editor Dark (Default) */
+            --e-bg: #1e1e1e;
+            --e-gutter: #2d2d2d;
+            --e-text: #9cdcfe;
+            --e-line: #858585;
+        }
+
+        .light-theme {
+            --e-bg: #ffffff;
+            --e-gutter: #f0f0f0;
+            --e-text: #267f99;
+            --e-line: #afafaf;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; background-color: var(--bg); color: var(--text);
+            overflow: hidden; height: 100vh; width: 100vw;
+        }
+
+        /* --- UI Components --- */
+        header {
+            position: sticky; top: 0; background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: calc(env(safe-area-inset-top) + 10px) 20px 15px; border-bottom: 1px solid var(--border); z-index: 100;
+        }
+        h1 { font-size: 18px; margin: 0; }
+        .plus-btn { font-size: 24px; color: var(--primary); background: none; border: none; cursor: pointer; }
+
+        .hidden { display: none !important; }
+        .view { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; background: var(--bg); overflow-y: auto; }
+        
+        .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-ghost { background: transparent; color: var(--primary); }
+
+        /* --- App List --- */
+        .app-list { list-style: none; padding: 15px; margin: 0; }
+        .app-item {
+            background: var(--card-bg); border-radius: 12px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .app-info { flex-grow: 1; font-size: 17px; }
+        .dots-btn { padding: 5px 10px; font-size: 18px; background: none; border: none; color: #8e8e93; }
+
+        /* --- Menus --- */
+        #dropdown, #settingsMenu {
+            position: fixed; right: 15px; background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 250px; z-index: 1000;
+        }
+        #actionMenu {
+            position: fixed; right: 15px; background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 180px; z-index: 1000;
+        }
+        .menu-item { padding: 14px 16px; border-bottom: 0.5px solid #c6c6c8; font-size: 16px; }
+        .sub-menu { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease;
+            background: rgba(245,245,245,0.95);
+        }
+        .sub-menu.open { max-height: 300px; }
+        .sub-menu-item { 
+            padding: 12px 16px 12px 42px; 
+            border-bottom: 0.5px solid #c6c6c8; 
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .sub-menu-item:hover { background: rgba(0,0,0,0.05); }
+        .sub-menu-item.selected { 
+            color: var(--primary); 
+            font-weight: 500;
+        }
+        .sub-menu-item.selected::before {
+            content: "✓ ";
+            margin-right: 4px;
+        }
+
+        /* iOS Toggle Switch */
+        .ios-toggle {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+        .ios-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .ios-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e9e9ea;
+            transition: .4s;
+            border-radius: 31px;
+        }
+        .ios-slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16), 0 3px 1px rgba(0,0,0,0.1);
+        }
+        .ios-toggle input:checked + .ios-slider {
+            background-color: #34c759;
+        }
+        .ios-toggle input:checked + .ios-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007aff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007aff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #editorMoreMenu {
+            position: fixed; background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 200px; z-index: 1000;
+        }
+
+        /* --- Pro Editor --- */
+        #view-editor { background: var(--e-bg); display: flex; flex-direction: column; overflow: hidden; }
+        .editor-header { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: calc(env(safe-area-inset-top) + 5px) 15px 10px; background: var(--e-gutter); border-bottom: 1px solid var(--border);
+        }
+        .editor-container { position: relative; flex-grow: 1; overflow: hidden; }
+        
+        #editor-codemirror {
+            height: 100%; width: 100%;
+        }
+
+        #editor-codemirror .CodeMirror {
+            height: 100%;
+            font-family: Menlo, Monaco, 'Courier New', monospace;
+            font-size: 14px;
+            /* Improved scrolling and selecting */
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        
+        #editor-codemirror .CodeMirror-scroll {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #editor-codemirror .CodeMirror-selected {
+            background: rgba(0, 122, 255, 0.2) !important;
+        }
+        
+        #editor-codemirror .CodeMirror-cursor {
+            border-left-width: 2px;
+        }
+
+        .editor-toolbar { background: var(--e-gutter); padding: 8px 15px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+        .editor-toolbar .spacer { flex-grow: 1; }
+
+        .search-box {
+            display: none; background: var(--e-gutter); padding: 8px 15px;
+            border-bottom: 1px solid var(--border); align-items: center; gap: 8px;
+        }
+        .search-box.active { display: flex; }
+        .search-box input {
+            flex-grow: 1; padding: 6px 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 13px; background: var(--e-bg);
+            color: var(--e-text);
+        }
+        .search-box button {
+            padding: 6px 12px; border-radius: 6px; border: none;
+            background: #e5e5ea; font-size: 12px; cursor: pointer;
+        }
+
+        .CodeMirror-search-match {
+            background: yellow;
+            border-bottom: 2px solid orange;
+        }
+        .CodeMirror-search-match-selected {
+            background: #ff8c00 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* --- Runner & X Button --- */
+        #runner { 
+            position: fixed; 
+            inset: 0; 
+            background: #000000; 
+            z-index: 2000; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        iframe { width: 100%; height: 100%; border: none; min-height: 100.1%; }
+        
+        .close-x {
+            position: fixed; 
+            width: 30px; height: 30px; border-radius: 50%; /* Smaller size */
+            background: rgba(0,0,0,0.4); color: white; /* High contrast for visibility */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; line-height: 1; border: none; z-index: 2100; cursor: move;
+            touch-action: none; user-select: none;
+        }
+    </style>
+</head>
+<body id="main-body">
+
+<input type="file" id="file-import" class="hidden" accept=".html,.txt" onchange="handleFileSelect(event)">
+
+<div id="view-dashboard" class="view">
+    <header>
+        <h1>My HTML Apps</h1>
+        <div>
+            <button id="settingsBtn" class="plus-btn" onclick="stopEvent(event); toggleElement('settingsMenu')" style="margin-right: 10px; font-size: 24px; padding: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;">
+                    <circle cx="12" cy="12" r="3" stroke="#007aff" stroke-width="1.5"></circle>
+                    <path d="M13.7654 2.15224C13.3978 2 12.9319 2 12 2C11.0681 2 10.6022 2 10.2346 2.15224C9.74457 2.35523 9.35522 2.74458 9.15223 3.23463C9.05957 3.45834 9.0233 3.7185 9.00911 4.09799C8.98826 4.65568 8.70226 5.17189 8.21894 5.45093C7.73564 5.72996 7.14559 5.71954 6.65219 5.45876C6.31645 5.2813 6.07301 5.18262 5.83294 5.15102C5.30704 5.08178 4.77518 5.22429 4.35436 5.5472C4.03874 5.78938 3.80577 6.1929 3.33983 6.99993C2.87389 7.80697 2.64092 8.21048 2.58899 8.60491C2.51976 9.1308 2.66227 9.66266 2.98518 10.0835C3.13256 10.2756 3.3397 10.437 3.66119 10.639C4.1338 10.936 4.43789 11.4419 4.43786 12C4.43783 12.5581 4.13375 13.0639 3.66118 13.3608C3.33965 13.5629 3.13248 13.7244 2.98508 13.9165C2.66217 14.3373 2.51966 14.8691 2.5889 15.395C2.64082 15.7894 2.87379 16.193 3.33973 17C3.80568 17.807 4.03865 18.2106 4.35426 18.4527C4.77508 18.7756 5.30694 18.9181 5.83284 18.8489C6.07289 18.8173 6.31632 18.7186 6.65204 18.5412C7.14547 18.2804 7.73556 18.27 8.2189 18.549C8.70224 18.8281 8.98826 19.3443 9.00911 19.9021C9.02331 20.2815 9.05957 20.5417 9.15223 20.7654C9.35522 21.2554 9.74457 21.6448 10.2346 21.8478C10.6022 22 11.0681 22 12 22C12.9319 22 13.3978 22 13.7654 21.8478C14.2554 21.6448 14.6448 21.2554 14.8477 20.7654C14.9404 20.5417 14.9767 20.2815 14.9909 19.902C15.0117 19.3443 15.2977 18.8281 15.781 18.549C16.2643 18.2699 16.8544 18.2804 17.3479 18.5412C17.6836 18.7186 17.927 18.8172 18.167 18.8488C18.6929 18.9181 19.2248 18.7756 19.6456 18.4527C19.9612 18.2105 20.1942 17.807 20.6601 16.9999C21.1261 16.1929 21.3591 15.7894 21.411 15.395C21.4802 14.8691 21.3377 14.3372 21.0148 13.9164C20.8674 13.7243 20.6602 13.5628 20.3387 13.3608C19.8662 13.0639 19.5621 12.558 19.5621 11.9999C19.5621 11.4418 19.8662 10.9361 20.3387 10.6392C20.6603 10.4371 20.8675 10.2757 21.0149 10.0835C21.3378 9.66273 21.4803 9.13087 21.4111 8.60497C21.3592 8.21055 21.1262 7.80703 20.6602 7C20.1943 6.19297 19.9613 5.78945 19.6457 5.54727C19.2249 5.22436 18.693 5.08185 18.1671 5.15109C17.9271 5.18269 17.6837 5.28136 17.3479 5.4588C16.8545 5.71959 16.2644 5.73002 15.7811 5.45096C15.2977 5.17191 15.0117 4.65566 14.9909 4.09794C14.9767 3.71848 14.9404 3.45833 14.8477 3.23463C14.6448 2.74458 14.2554 2.35523 13.7654 2.15224Z" stroke="#007aff" stroke-width="1.5"></path>
+                </svg>
+            </button>
+            <button id="addBtn" class="plus-btn" onclick="stopEvent(event); toggleElement('dropdown')" style="font-size: 32px;">+</button>
+            <button id="doneBtn" class="plus-btn hidden" onclick="toggleReorderMode()" style="font-size: 17px;">Done</button>
+        </div>
+    </header>
+    <div id="dropdown" class="hidden">
+        <div class="menu-item" onclick="triggerFileInput()">Import HTML File</div>
+        <div class="menu-item" onclick="openEditor()">HTML Editor</div>
+    </div>
+    <div id="settingsMenu" class="hidden">
+        <div class="menu-item" onclick="stopEvent(event); toggleNativeSetting()" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" fill="none" style="width: 18px; height: 18px; flex-shrink: 0;">
+                    <circle cx="96" cy="96" r="74" stroke="#007aff" stroke-width="12"></circle>
+                    <ellipse cx="96" cy="96" stroke="#007aff" stroke-width="12" rx="30" ry="74"></ellipse>
+                    <path stroke="#007aff" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" d="M28 72h136M28 120h136"></path>
+                </svg>
+                <span>Open Apps in Browser</span>
+            </div>
+            <label class="ios-toggle" style="flex-shrink: 0;">
+                <input type="checkbox" id="nativeToggle">
+                <span class="ios-slider"></span>
+            </label>
+        </div>
+        <div class="menu-item" onclick="stopEvent(event); toggleTopSafeArea()" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg fill="#007aff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; flex-shrink: 0;">
+                    <path d="M20,8 L20,5.5 C20,4.67157288 19.3284271,4 18.5,4 L5.5,4 C4.67157288,4 4,4.67157288 4,5.5 L4,8 L20,8 Z M20,9 L4,9 L4,18.5 C4,19.3284271 4.67157288,20 5.5,20 L18.5,20 C19.3284271,20 20,19.3284271 20,18.5 L20,9 Z M3,5.5 C3,4.11928813 4.11928813,3 5.5,3 L18.5,3 C19.8807119,3 21,4.11928813 21,5.5 L21,18.5 C21,19.8807119 19.8807119,21 18.5,21 L5.5,21 C4.11928813,21 3,19.8807119 3,18.5 L3,5.5 Z"></path>
+                </svg>
+                <span>Top safe area</span>
+            </div>
+            <label class="ios-toggle">
+                <input type="checkbox" id="topSafeAreaToggle">
+                <span class="ios-slider"></span>
+            </label>
+        </div>
+        <div class="menu-item" onclick="stopEvent(event); toggleBottomSafeArea()" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg fill="#007aff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; flex-shrink: 0;">
+                    <path d="M20,15 L20,5.5 C20,4.67157288 19.3284271,4 18.5,4 L5.5,4 C4.67157288,4 4,4.67157288 4,5.5 L4,15 L20,15 Z M20,16 L4,16 L4,18.5 C4,19.3284271 4.67157288,20 5.5,20 L18.5,20 C19.3284271,20 20,19.3284271 20,18.5 L20,16 Z M3,5.5 C3,4.11928813 4.11928813,3 5.5,3 L18.5,3 C19.8807119,3 21,4.11928813 21,5.5 L21,18.5 C21,19.8807119 19.8807119,21 18.5,21 L5.5,21 C4.11928813,21 3,19.8807119 3,18.5 L3,5.5 Z"></path>
+                </svg>
+                <span>Bottom safe area</span>
+            </div>
+            <label class="ios-toggle">
+                <input type="checkbox" id="bottomSafeAreaToggle">
+                <span class="ios-slider"></span>
+            </label>
+        </div>
+        <div class="menu-item" onclick="stopEvent(event)" style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; flex-shrink: 0;">
+                    <circle cx="11" cy="11" r="7" stroke="#007aff" stroke-width="1.5"></circle>
+                    <path d="M11 8V14M8 11H14" stroke="#007aff" stroke-width="1.5" stroke-linecap="round"></path>
+                    <path d="M20 20L17 17" stroke="#007aff" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+                <span>Zoom Level</span>
+                <span id="zoomValue" style="margin-left: auto; color: #8e8e93; font-size: 14px;">100%</span>
+                <svg onclick="resetZoom()" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; opacity: 0.6;" title="Reset to 100%">
+                    <path d="M4 12C4 7.58172 7.58172 4 12 4C14.5264 4 16.7792 5.17108 18.2454 7M20 7H18.2454M18.2454 7V5M18.2454 7C17.2812 5.75117 15.8814 4.8422 14.2933 4.46487" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M20 12C20 16.4183 16.4183 20 12 20C9.47362 20 7.22075 18.8289 5.75463 17M4 17H5.75463M5.75463 17V19M5.75463 17C6.71878 18.2488 8.11862 19.1578 9.70674 19.5351" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </div>
+            <input type="range" id="zoomSlider" min="50" max="200" value="100" step="10" 
+                   style="width: 100%; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: #d3d3d3; outline: none;"
+                   oninput="updateZoomLevel(this.value)">
+        </div>
+        <div class="menu-item" onclick="stopEvent(event); toggleDismissButtonMenu()" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10" stroke="#007aff" stroke-width="1.5"></circle>
+                <path d="M14.5 9.50002L9.5 14.5M9.49998 9.5L14.5 14.5" stroke="#007aff" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span>Dismiss Button Position</span>
+        </div>
+        <div id="dismissButtonSubMenu" class="sub-menu">
+            <div class="sub-menu-item" onclick="setXButtonPosition('Top Left')">Top Left</div>
+            <div class="sub-menu-item" onclick="setXButtonPosition('Top Right')">Top Right</div>
+            <div class="sub-menu-item" onclick="setXButtonPosition('Bottom Left')">Bottom Left</div>
+            <div class="sub-menu-item" onclick="setXButtonPosition('Bottom Right')">Bottom Right</div>
+        </div>
+        <div class="menu-item" onclick="toggleReorderMode()" style="display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" fill="none" style="width: 18px; height: 18px; flex-shrink: 0;">
+                <path d="M9.9 6.417a1 1 0 0 1-.9.571H6V17a1 1 0 0 1-2 0V6.988H1a1 1 0 0 1-.9-.571.983.983 0 0 1 .12-1.051l4-5.006a1.024 1.024 0 0 1 1.56 0l4 5.006a.983.983 0 0 1 .12 1.051zm8 5.166a1 1 0 0 0-.9-.571h-3V1a1 1 0 0 0-2 0v10.012H9a1 1 0 0 0-.9.571.983.983 0 0 0 .12 1.051l4 5.006a1.024 1.024 0 0 0 1.56 0l4-5.006a.983.983 0 0 0 .12-1.051z" fill="#007aff" fill-rule="evenodd"></path>
+            </svg>
+            <span id="reorderText">Reorder</span>
+        </div>
+    </div>
+    <ul id="app-list" class="app-list"></ul>
+</div>
+
+<div id="actionMenu" class="hidden">
+    <div class="menu-item" onclick="handleAction('edit')">Edit</div>
+    <div class="menu-item" onclick="handleAction('rename')">Rename</div>
+    <div class="menu-item" onclick="handleAction('export')">Export HTML</div>
+    <div class="menu-item" style="color:red" onclick="handleAction('delete')">Delete</div>
+</div>
+
+<div id="editorMoreMenu" class="hidden">
+    <div class="menu-item" onclick="copyEditorContent()">Copy</div>
+    <div class="menu-item" onclick="goToLinePrompt()">Go to Line</div>
+    <div class="menu-item" onclick="toggleTheme()">Toggle Theme</div>
+    <div class="menu-item" onclick="changeFontSize()">Font Size</div>
+</div>
+
+<div id="view-editor" class="view hidden">
+    <div class="editor-header">
+        <button class="btn-ghost btn" onclick="showView('view-dashboard')">Cancel</button>
+        <span id="editor-title" style="color:var(--e-line); font-size:12px">New App</span>
+        <button class="btn-primary btn" onclick="saveApp()">Save</button>
+    </div>
+    <div class="editor-toolbar">
+        <button class="btn" style="background:#e5e5ea; font-size:11px" onclick="pasteClipboard()">Paste</button>
+        <button class="btn" style="background:#e5e5ea; font-size:11px" onclick="stopEvent(event); toggleEditorMoreMenu(event)">More</button>
+        <div class="spacer"></div>
+        <button class="btn" style="background:#e5e5ea; font-size:11px" onclick="toggleSearch()">Search</button>
+    </div>
+    <div class="search-box" id="search-box">
+        <input type="text" id="search-input" placeholder="Search..." />
+        <button onclick="searchPrev()">↑</button>
+        <button onclick="searchNext()">↓</button>
+        <button onclick="toggleSearch()">✕</button>
+    </div>
+    <div class="editor-container">
+        <div id="editor-codemirror"></div>
+    </div>
+</div>
+
+<div id="runner" class="hidden">
+    <button class="close-x">×</button>
+    <iframe id="runner-frame"></iframe>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldcode.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/xml-fold.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/brace-fold.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/comment-fold.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/searchcursor.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/search.js"></script>
+
+<script>
+    let apps = [];
+    // Load apps with compression support
+    try {
+        const stored = localStorage.getItem('myHtmlApps');
+        if (stored) {
+            // Try compressed format first
+            const compressed = localStorage.getItem('myHtmlApps_compressed');
+            if (compressed === 'true') {
+                const decompressed = LZString.decompressFromUTF16(stored);
+                apps = JSON.parse(decompressed);
+            } else {
+                // Legacy uncompressed format
+                apps = JSON.parse(stored);
+            }
+        }
+    } catch (e) {
+        console.error('Error loading apps:', e);
+        apps = [];
+    }
+    let currentEditIndex = null;
+    let currentContextIndex = null;
+    let codeMirrorEditor = null;
+    let currentTheme = 'monokai';
+    let reorderMode = false;
+
+    function initCodeMirror() {
+        if (codeMirrorEditor) return;
+        
+        // Load saved theme or default to monokai
+        const savedTheme = localStorage.getItem('editorTheme') || 'monokai';
+        currentTheme = savedTheme;
+        
+        codeMirrorEditor = CodeMirror(document.getElementById('editor-codemirror'), {
+            mode: 'htmlmixed',
+            theme: savedTheme,
+            lineNumbers: true,
+            lineWrapping: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            indentUnit: 2,
+            tabSize: 2,
+            indentWithTabs: false,
+            // Improved scrolling and selecting
+            scrollbarStyle: 'native',
+            dragDrop: true,
+            cursorBlinkRate: 530,
+            cursorScrollMargin: 50,
+            viewportMargin: 10
+        });
+    }
+
+    function getEditorValue() {
+        return codeMirrorEditor ? codeMirrorEditor.getValue() : '';
+    }
+
+    function setEditorValue(value) {
+        if (codeMirrorEditor) {
+            codeMirrorEditor.setValue(value);
+        }
+    }
+
+    function toggleEditorTheme() {
+        if (!codeMirrorEditor) return;
+        currentTheme = currentTheme === 'monokai' ? 'eclipse' : 'monokai';
+        codeMirrorEditor.setOption('theme', currentTheme);
+        localStorage.setItem('editorTheme', currentTheme);
+    }
+
+    let searchQuery = '';
+    let searchCursor = null;
+    let searchMarks = [];
+    let currentSearchMark = null;
+
+    function clearSearchHighlights() {
+        searchMarks.forEach(mark => mark.clear());
+        searchMarks = [];
+        currentSearchMark = null;
+    }
+
+    function highlightAllMatches(query) {
+        if (!codeMirrorEditor || !query) return;
+        
+        clearSearchHighlights();
+        
+        const cursor = codeMirrorEditor.getSearchCursor(query);
+        while (cursor.findNext()) {
+            const mark = codeMirrorEditor.markText(
+                cursor.from(), 
+                cursor.to(), 
+                { className: 'CodeMirror-search-match' }
+            );
+            searchMarks.push(mark);
+        }
+    }
+
+    function highlightCurrentMatch(from, to) {
+        // Remove previous current match highlighting
+        if (currentSearchMark) {
+            const range = currentSearchMark.find();
+            if (range) {
+                currentSearchMark.clear();
+                const newMark = codeMirrorEditor.markText(
+                    range.from, 
+                    range.to, 
+                    { className: 'CodeMirror-search-match' }
+                );
+                const index = searchMarks.indexOf(currentSearchMark);
+                if (index !== -1) {
+                    searchMarks[index] = newMark;
+                }
+            }
+        }
+
+        // Add current match highlighting
+        const matchIndex = searchMarks.findIndex(mark => {
+            const range = mark.find();
+            return range && range.from.line === from.line && range.from.ch === from.ch;
+        });
+
+        if (matchIndex !== -1) {
+            const oldMark = searchMarks[matchIndex];
+            oldMark.clear();
+            const newMark = codeMirrorEditor.markText(
+                from, 
+                to, 
+                { className: 'CodeMirror-search-match CodeMirror-search-match-selected' }
+            );
+            searchMarks[matchIndex] = newMark;
+            currentSearchMark = newMark;
+        }
+    }
+
+    function toggleSearch() {
+        const searchBox = document.getElementById('search-box');
+        searchBox.classList.toggle('active');
+        if (searchBox.classList.contains('active')) {
+            document.getElementById('search-input').focus();
+        } else {
+            clearSearchHighlights();
+            searchQuery = '';
+            searchCursor = null;
+        }
+    }
+
+    function doSearch(reverse) {
+        if (!codeMirrorEditor) return;
+        const query = document.getElementById('search-input').value;
+        if (!query) return;
+
+        if (query !== searchQuery) {
+            searchQuery = query;
+            searchCursor = null;
+            highlightAllMatches(query);
+        }
+
+        if (!searchCursor) {
+            searchCursor = codeMirrorEditor.getSearchCursor(query, reverse ? codeMirrorEditor.getCursor() : null);
+        }
+
+        const found = reverse ? searchCursor.findPrevious() : searchCursor.findNext();
+        
+        if (found) {
+            highlightCurrentMatch(searchCursor.from(), searchCursor.to());
+            codeMirrorEditor.setSelection(searchCursor.from(), searchCursor.to());
+            codeMirrorEditor.scrollIntoView({from: searchCursor.from(), to: searchCursor.to()}, 100);
+        } else {
+            searchCursor = codeMirrorEditor.getSearchCursor(query, reverse ? {line: codeMirrorEditor.lastLine(), ch: 0} : {line: 0, ch: 0});
+            const wrapped = reverse ? searchCursor.findPrevious() : searchCursor.findNext();
+            if (wrapped) {
+                highlightCurrentMatch(searchCursor.from(), searchCursor.to());
+                codeMirrorEditor.setSelection(searchCursor.from(), searchCursor.to());
+                codeMirrorEditor.scrollIntoView({from: searchCursor.from(), to: searchCursor.to()}, 100);
+            }
+        }
+    }
+
+    function searchNext() {
+        doSearch(false);
+    }
+
+    function searchPrev() {
+        doSearch(true);
+    }
+
+    document.addEventListener('keydown', function(e) {
+        const searchBox = document.getElementById('search-box');
+        if (searchBox.classList.contains('active') && e.target.id === 'search-input') {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    searchPrev();
+                } else {
+                    searchNext();
+                }
+            } else if (e.key === 'Escape') {
+                toggleSearch();
+            }
+        }
+    });
+
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'search-input') {
+            const query = e.target.value;
+            if (query) {
+                searchQuery = query;
+                searchCursor = null;
+                currentSearchMark = null;
+                highlightAllMatches(query);
+            } else {
+                clearSearchHighlights();
+                searchQuery = '';
+                searchCursor = null;
+            }
+        }
+    });
+
+    function stopEvent(e) { e.stopPropagation(); }
+    
+    function toggleNativeSetting() {
+        const toggle = document.getElementById('nativeToggle');
+        toggle.checked = !toggle.checked;
+        localStorage.setItem('openNatively', toggle.checked);
+    }
+    
+    function toggleTopSafeArea() {
+        const toggle = document.getElementById('topSafeAreaToggle');
+        toggle.checked = !toggle.checked;
+        localStorage.setItem('topSafeArea', toggle.checked);
+    }
+    
+    function toggleBottomSafeArea() {
+        const toggle = document.getElementById('bottomSafeAreaToggle');
+        toggle.checked = !toggle.checked;
+        localStorage.setItem('bottomSafeArea', toggle.checked);
+    }
+    
+    function updateZoomLevel(value) {
+        localStorage.setItem('zoomLevel', value);
+        document.getElementById('zoomValue').textContent = value + '%';
+    }
+    
+    function resetZoom() {
+        const slider = document.getElementById('zoomSlider');
+        slider.value = '100';
+        updateZoomLevel('100');
+    }
+    
+    function closeMenus() {
+        document.getElementById('dropdown').classList.add('hidden');
+        document.getElementById('actionMenu').classList.add('hidden');
+        document.getElementById('editorMoreMenu').classList.add('hidden');
+        document.getElementById('settingsMenu').classList.add('hidden');
+        document.getElementById('dismissButtonSubMenu').classList.remove('open');
+    }
+
+    function showView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
+        closeMenus();
+    }
+
+    function toggleElement(id) {
+        const el = document.getElementById(id);
+        const isHidden = el.classList.contains('hidden');
+        closeMenus();
+        if (isHidden) el.classList.remove('hidden');
+    }
+
+    function toggleTheme() {
+        toggleEditorTheme();
+    }
+
+    function toggleEditorMoreMenu(e) {
+        const menu = document.getElementById('editorMoreMenu');
+        const isHidden = menu.classList.contains('hidden');
+        closeMenus();
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            menu.style.top = (e.clientY + 10) + 'px';
+            menu.style.left = (e.clientX - 100) + 'px';
+        }
+    }
+
+    function copyEditorContent() {
+        const content = getEditorValue();
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Content copied!');
+            }).catch(() => {
+                alert('Copy failed. Try selecting text manually.');
+            });
+        } else {
+            alert('Clipboard not supported.');
+        }
+        closeMenus();
+    }
+
+    function goToLinePrompt() {
+        const lineNum = prompt('Go to line number:');
+        if (lineNum && codeMirrorEditor) {
+            const line = parseInt(lineNum) - 1;
+            if (line >= 0 && line < codeMirrorEditor.lineCount()) {
+                codeMirrorEditor.setCursor({line: line, ch: 0});
+                codeMirrorEditor.scrollIntoView({line: line, ch: 0}, 100);
+                codeMirrorEditor.focus();
+            } else {
+                alert('Line number out of range.');
+            }
+        }
+        closeMenus();
+    }
+
+    let currentFontSize = 14;
+    function changeFontSize() {
+        const size = prompt('Font size (px):', currentFontSize);
+        if (size && codeMirrorEditor) {
+            const fontSize = parseInt(size);
+            if (fontSize >= 8 && fontSize <= 32) {
+                currentFontSize = fontSize;
+                const cmElement = codeMirrorEditor.getWrapperElement();
+                cmElement.style.fontSize = fontSize + 'px';
+                codeMirrorEditor.refresh();
+            } else {
+                alert('Font size must be between 8 and 32.');
+            }
+        }
+        closeMenus();
+    }
+
+    function triggerFileInput() { document.getElementById('file-import').click(); }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const appsBefore = apps.length;
+            apps.push({ name: file.name.replace(/\.[^/.]+$/, ""), code: e.target.result });
+            saveToStorage();
+            // Check if app was actually added (saveToStorage reverts on quota error)
+            if (apps.length === appsBefore) {
+                event.target.value = ''; // Clear file input
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Clear file input for next import
+    }
+
+    function renderList() {
+        const list = document.getElementById('app-list');
+        list.innerHTML = '';
+        apps.forEach((app, index) => {
+            const li = document.createElement('li');
+            li.className = 'app-item';
+            
+            if (reorderMode) {
+                // Show reorder arrows
+                li.innerHTML = `<div class="app-info">${app.name}</div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button class="dots-btn" onclick="moveAppUp(${index})" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>↑</button>
+                                    <button class="dots-btn" onclick="moveAppDown(${index})" ${index === apps.length - 1 ? 'disabled style="opacity:0.3"' : ''}>↓</button>
+                                </div>`;
+            } else {
+                // Normal mode
+                li.innerHTML = `<div class="app-info" onclick="runApp(${index})">${app.name}</div>
+                                <button class="dots-btn" onclick="stopEvent(event); openActionMenu(event, ${index})">•••</button>`;
+            }
+            
+            list.appendChild(li);
+        });
+    }
+
+    function moveAppUp(index) {
+        if (index > 0) {
+            [apps[index], apps[index - 1]] = [apps[index - 1], apps[index]];
+            saveToStorage();
+        }
+    }
+
+    function moveAppDown(index) {
+        if (index < apps.length - 1) {
+            [apps[index], apps[index + 1]] = [apps[index + 1], apps[index]];
+            saveToStorage();
+        }
+    }
+
+    function toggleDismissButtonMenu() {
+        const subMenu = document.getElementById('dismissButtonSubMenu');
+        subMenu.classList.toggle('open');
+        updateSelectedPosition();
+    }
+
+    function setXButtonPosition(position) {
+        localStorage.setItem('xButtonPosition', position);
+        
+        // Apply position to close button
+        const closeBtn = document.querySelector('.close-x');
+        applyXButtonPosition(closeBtn, position);
+        
+        // Update selected state
+        updateSelectedPosition();
+    }
+
+    function updateSelectedPosition() {
+        const currentPos = localStorage.getItem('xButtonPosition') || 'Bottom Left';
+        const subMenuItems = document.querySelectorAll('#dismissButtonSubMenu .sub-menu-item');
+        
+        subMenuItems.forEach(item => {
+            if (item.textContent === currentPos) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function applyXButtonPosition(closeBtn, position) {
+        // Reset all positions
+        closeBtn.style.top = '';
+        closeBtn.style.bottom = '';
+        closeBtn.style.left = '';
+        closeBtn.style.right = '';
+        
+        const offset = '20px';
+        const safeAreaTop = 'calc(env(safe-area-inset-top) + ' + offset + ')';
+        const safeAreaBottom = 'calc(env(safe-area-inset-bottom) + ' + offset + ')';
+        
+        switch(position) {
+            case 'Bottom Left':
+                closeBtn.style.bottom = safeAreaBottom;
+                closeBtn.style.left = offset;
+                break;
+            case 'Bottom Right':
+                closeBtn.style.bottom = safeAreaBottom;
+                closeBtn.style.right = offset;
+                break;
+            case 'Top Left':
+                closeBtn.style.top = safeAreaTop;
+                closeBtn.style.left = offset;
+                break;
+            case 'Top Right':
+                closeBtn.style.top = safeAreaTop;
+                closeBtn.style.right = offset;
+                break;
+        }
+    }
+
+    function toggleReorderMode() {
+        reorderMode = !reorderMode;
+        
+        // Toggle button visibility
+        if (reorderMode) {
+            document.getElementById('settingsBtn').classList.add('hidden');
+            document.getElementById('addBtn').classList.add('hidden');
+            document.getElementById('doneBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('settingsBtn').classList.remove('hidden');
+            document.getElementById('addBtn').classList.remove('hidden');
+            document.getElementById('doneBtn').classList.add('hidden');
+        }
+        
+        renderList();
+        closeMenus();
+    }
+
+    function openActionMenu(e, index) {
+        currentContextIndex = index;
+        const menu = document.getElementById('actionMenu');
+        closeMenus();
+        menu.classList.remove('hidden');
+        
+        // Calculate if menu would go off screen
+        const menuHeight = 180; // Approximate height of 4 menu items
+        const windowHeight = window.innerHeight;
+        const clickY = e.clientY;
+        
+        // If menu would go off bottom, position it above the click
+        if (clickY + menuHeight + 15 > windowHeight) {
+            menu.style.top = (clickY - menuHeight - 10) + 'px';
+        } else {
+            menu.style.top = (clickY + 15) + 'px';
+        }
+    }
+
+    function handleAction(type) {
+        if (type === 'delete') { if (confirm('Delete?')) { apps.splice(currentContextIndex, 1); saveToStorage(); } }
+        else if (type === 'rename') { 
+            const n = prompt('New name:', apps[currentContextIndex].name); 
+            if (n) { apps[currentContextIndex].name = n; saveToStorage(); } 
+        }
+        else if (type === 'export') { exportApp(currentContextIndex); }
+        else if (type === 'edit') { openEditor(currentContextIndex); }
+        closeMenus();
+    }
+
+    function openEditor(index = null) {
+        currentEditIndex = index;
+        const code = index !== null ? apps[index].code : '';
+        document.getElementById('editor-title').innerText = index !== null ? apps[index].name : 'New App';
+        showView('view-editor');
+        setTimeout(() => {
+            setEditorValue(code);
+            if (codeMirrorEditor) codeMirrorEditor.refresh();
+        }, 100);
+    }
+
+    async function pasteClipboard() {
+        try { 
+            const text = await navigator.clipboard.readText();
+            setEditorValue(text);
+        } catch (err) { alert('Use long-press to paste.'); }
+    }
+
+    function saveApp() {
+        const code = getEditorValue();
+        if (!code) return;
+        if (currentEditIndex !== null) { apps[currentEditIndex].code = code; }
+        else { 
+            const name = prompt('App name:'); 
+            if (!name) return;
+            apps.push({ name, code });
+        }
+        saveToStorage();
+        showView('view-dashboard');
+    }
+
+    function saveToStorage() {
+        try {
+            const json = JSON.stringify(apps);
+            const compressed = LZString.compressToUTF16(json);
+            localStorage.setItem('myHtmlApps', compressed);
+            localStorage.setItem('myHtmlApps_compressed', 'true');
+            renderList();
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.code === 22) {
+                alert('Storage full! Cannot save more apps. Please delete some apps to free up space.');
+                // Reload apps from storage to revert the failed addition
+                try {
+                    const stored = localStorage.getItem('myHtmlApps');
+                    const compressed = localStorage.getItem('myHtmlApps_compressed');
+                    if (compressed === 'true') {
+                        const decompressed = LZString.decompressFromUTF16(stored);
+                        apps = JSON.parse(decompressed);
+                    } else {
+                        apps = JSON.parse(stored);
+                    }
+                } catch (err) {
+                    apps = [];
+                }
+                renderList();
+            } else {
+                alert('Failed to save app: ' + e.message);
+            }
+        }
+    }
+
+    function runApp(index) {
+        const openNatively = localStorage.getItem('openNatively') === 'true';
+        const app = apps[index];
+        const zoomLevel = localStorage.getItem('zoomLevel') || '100';
+        const scale = parseFloat(zoomLevel) / 100;
+        
+        if (openNatively) {
+            // Open in new Safari window/tab with zoom applied
+            let modifiedCode = app.code;
+            
+            // Apply zoom to body to avoid layout/positioning issues with elements
+            const zoomCSS = `<style>body{zoom:${scale};}</style>`;
+            
+            if (modifiedCode.includes('</head>')) {
+                modifiedCode = modifiedCode.replace('</head>', zoomCSS + '</head>');
+            } else if (modifiedCode.includes('<body>')) {
+                modifiedCode = modifiedCode.replace('<body>', zoomCSS + '<body>');
+            } else if (modifiedCode.includes('<body ')) {
+                modifiedCode = modifiedCode.replace(/<body\s+/i, zoomCSS + '<body ');
+            } else {
+                modifiedCode = zoomCSS + modifiedCode;
+            }
+            
+            const blob = new Blob([modifiedCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } else {
+            // Open in iframe overlay (exactly like original)
+            const runner = document.getElementById('runner');
+            runner.classList.remove('hidden');
+            
+            const iframe = document.getElementById('runner-frame');
+            
+            // Apply zoom to body to avoid layout/positioning issues with elements
+            let modifiedCode = app.code;
+            const zoomCSS = `<style>body{zoom:${scale};}</style>`;
+            
+            if (modifiedCode.includes('</head>')) {
+                modifiedCode = modifiedCode.replace('</head>', zoomCSS + '</head>');
+            } else if (modifiedCode.includes('<body>')) {
+                modifiedCode = modifiedCode.replace('<body>', zoomCSS + '<body>');
+            } else if (modifiedCode.includes('<body ')) {
+                modifiedCode = modifiedCode.replace(/<body\s+/i, zoomCSS + '<body ');
+            } else {
+                modifiedCode = zoomCSS + modifiedCode;
+            }
+            
+            iframe.srcdoc = modifiedCode;
+            
+            // Reset iframe transform styles
+            iframe.style.transform = '';
+            iframe.style.transformOrigin = '';
+            iframe.style.width = '';
+            iframe.style.height = '';
+            
+            // Apply safe area settings
+            const topSafeArea = localStorage.getItem('topSafeArea') === 'true'; // default true
+            const bottomSafeArea = localStorage.getItem('bottomSafeArea') === 'true'; // default false
+            
+            const paddingTop = topSafeArea ? 'env(safe-area-inset-top)' : '0';
+            const paddingBottom = bottomSafeArea ? 'env(safe-area-inset-bottom)' : '0';
+            
+            runner.style.padding = `${paddingTop} env(safe-area-inset-right) ${paddingBottom} env(safe-area-inset-left)`;
+        }
+    }
+
+    function closeRunner() {
+        document.getElementById('runner').classList.add('hidden');
+        document.getElementById('runner-frame').srcdoc = '';
+        
+        // Reset close button to saved position preference
+        const closeBtn = document.querySelector('.close-x');
+        const savedPosition = localStorage.getItem('xButtonPosition') || 'Bottom Left';
+        applyXButtonPosition(closeBtn, savedPosition);
+    }
+
+    function exportApp(index) {
+        const app = apps[index];
+        const blob = new Blob([app.code], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = app.name + '.html';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Draggable close button
+    let isDragging = false;
+    let dragStartX, dragStartY, buttonStartX, buttonStartY;
+
+    function initDraggableButton() {
+        const closeBtn = document.querySelector('.close-x');
+        
+        // Apply saved position preference
+        const savedPosition = localStorage.getItem('xButtonPosition') || 'Bottom Left';
+        applyXButtonPosition(closeBtn, savedPosition);
+
+        // Touch events
+        closeBtn.addEventListener('touchstart', function(e) {
+            const touch = e.touches[0];
+            dragStartX = touch.clientX;
+            dragStartY = touch.clientY;
+            buttonStartX = closeBtn.offsetLeft;
+            buttonStartY = closeBtn.offsetTop;
+            isDragging = false;
+        });
+
+        closeBtn.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - dragStartX;
+            const deltaY = touch.clientY - dragStartY;
+            closeBtn.style.left = (buttonStartX + deltaX) + 'px';
+            closeBtn.style.top = (buttonStartY + deltaY) + 'px';
+        });
+
+        closeBtn.addEventListener('touchend', function(e) {
+            if (isDragging) {
+                e.preventDefault();
+                const pos = { top: closeBtn.style.top, left: closeBtn.style.left };
+                localStorage.setItem('closeButtonPos', JSON.stringify(pos));
+            } else {
+                closeRunner();
+            }
+            isDragging = false;
+        });
+
+        // Mouse events for desktop
+        closeBtn.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            buttonStartX = closeBtn.offsetLeft;
+            buttonStartY = closeBtn.offsetTop;
+            isDragging = false;
+
+            function onMouseMove(e) {
+                isDragging = true;
+                const deltaX = e.clientX - dragStartX;
+                const deltaY = e.clientY - dragStartY;
+                closeBtn.style.left = (buttonStartX + deltaX) + 'px';
+                closeBtn.style.top = (buttonStartY + deltaY) + 'px';
+            }
+
+            function onMouseUp(e) {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                if (isDragging) {
+                    const pos = { top: closeBtn.style.top, left: closeBtn.style.left };
+                    localStorage.setItem('closeButtonPos', JSON.stringify(pos));
+                } else {
+                    closeRunner();
+                }
+                isDragging = false;
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    document.addEventListener('click', closeMenus);
+    
+    // Service Worker for offline support
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+const CACHE_NAME = 'html-app-manager-v1';
+const urlsToCache = [
+  './',
+  'https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/eclipse.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldcode.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/xml-fold.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/brace-fold.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/comment-fold.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/searchcursor.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/search.js'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache).catch(err => {
+          console.log('Cache addAll error:', err);
+          return Promise.resolve();
+        });
+      })
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).then(response => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+          // Cache both 'basic' and 'cors' resources (CDN resources are 'cors')
+          if (response.type === 'basic' || response.type === 'cors') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        }).catch(() => {
+          return caches.match('./');
+        });
+      })
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+`;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl, { scope: './' }).then(registration => {
+            console.log('Service Worker registered for offline support');
+            // Force update on page load
+            registration.update();
+        }).catch(err => {
+            console.log('Service Worker registration failed:', err);
+        });
+    }
+    
+    // Initialize after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initCodeMirror();
+            renderList();
+            initDraggableButton();
+            // Initialize native toggle
+            const nativeToggle = document.getElementById('nativeToggle');
+            nativeToggle.checked = localStorage.getItem('openNatively') === 'true';
+            // Initialize safe area toggles
+            // Top safe area: always reset to true on app load
+            localStorage.setItem('topSafeArea', 'true');
+            const topSafeAreaToggle = document.getElementById('topSafeAreaToggle');
+            topSafeAreaToggle.checked = true;
+            const bottomSafeAreaToggle = document.getElementById('bottomSafeAreaToggle');
+            bottomSafeAreaToggle.checked = localStorage.getItem('bottomSafeArea') === 'true';
+            // Initialize zoom slider
+            const zoomLevel = localStorage.getItem('zoomLevel') || '100';
+            document.getElementById('zoomSlider').value = zoomLevel;
+            document.getElementById('zoomValue').textContent = zoomLevel + '%';
+            // Initialize selected position in sub-menu
+            updateSelectedPosition();
+        });
+    } else {
+        initCodeMirror();
+        renderList();
+        initDraggableButton();
+        // Initialize native toggle
+        const nativeToggle = document.getElementById('nativeToggle');
+        nativeToggle.checked = localStorage.getItem('openNatively') === 'true';
+        // Initialize safe area toggles
+        // Top safe area: always reset to true on app load
+        localStorage.setItem('topSafeArea', 'true');
+        const topSafeAreaToggle = document.getElementById('topSafeAreaToggle');
+        topSafeAreaToggle.checked = true;
+        const bottomSafeAreaToggle = document.getElementById('bottomSafeAreaToggle');
+        bottomSafeAreaToggle.checked = localStorage.getItem('bottomSafeArea') === 'true';
+        // Initialize zoom slider
+        const zoomLevel = localStorage.getItem('zoomLevel') || '100';
+        document.getElementById('zoomSlider').value = zoomLevel;
+        document.getElementById('zoomValue').textContent = zoomLevel + '%';
+        // Initialize selected position in sub-menu
+        updateSelectedPosition();
+    }
+</script>
+</body>
+</html>
